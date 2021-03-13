@@ -2,12 +2,14 @@ import numpy as np
 import cv2
 import math
 
+note_data = [60, 62, 67, 69, 71, 72, 74, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 98, 100]
+
 cap = cv2.VideoCapture(2)
 
 class ROOB(Exception):
     pass
 
-def do_thang():
+def do_thang(last_notes):
     # Capture frame-by-frame
     ret, frame = cap.read()
 
@@ -61,43 +63,93 @@ def do_thang():
 
     cv2.line(frame, top_m_i, bot_m_i, (0, 0, 255), thickness=1)
 
-    ang = math.atan(478 / (bot_m[0] - top_m[0]))
+    if bot_m[0] != top_m[0]:
 
-    print("nang", math.degrees(ang))
+        ang = math.atan(478 / (bot_m[0] - top_m[0]))
 
-    top_mid_dis_a = (top_r[0] - top_l[0]) / 2
+        print("nang", math.degrees(ang))
 
-    hyp = top_mid_dis_a * math.sin(ang) * 2
+        top_mid_dis_a = (top_r[0] - top_l[0]) / 2
 
-    side_ang = math.pi / 2 - ang
+        hyp = top_mid_dis_a * math.sin(ang) * 2
 
-    xer = hyp * math.cos(side_ang)
-    yer = hyp * math.sin(side_ang)
-    print("nadj", xer, yer, side_ang)
-    print("nhyp", hyp, top_mid_dis_a)
+        side_ang = math.pi / 2 - ang
 
-    if top_l[0] < bot_l[0]:
-        top_mod = (int(top_r[0] - xer), int(top_r[1] + yer))
+        xer = hyp * math.cos(side_ang)
+        yer = hyp * math.sin(side_ang)
+        print("nadj", xer, yer, side_ang)
+        print("nhyp", hyp, top_mid_dis_a)
 
-        cv2.line(frame, top_r, top_mod, (0, 0, 255), thickness=1)
+        if top_l[0] < bot_l[0]:
+            top_mod = (int(top_r[0] - xer), int(top_r[1] + yer))
 
-    if top_l[0] > bot_l[0]:
-        top_mod = (int(top_l[0] + xer), int(top_l[1] - yer))
+            p = (top_mod, top_r)
 
-        cv2.line(frame, top_l, top_mod, (0, 0, 255), thickness=1)
+        elif top_l[0] > bot_l[0]:
+            top_mod = (int(top_l[0] + xer), int(top_l[1] - yer))
+
+            p = (top_l, top_mod)
+
+        xstep = abs(xer / hyp)
+        ystep = - (yer / hyp)
+        
+        xc = p[0][0]
+        yc = min(p[0][1], p[1][1])
+
+        liner = []
+
+        while xc < p[1][0]:
+            xc = xc + xstep
+            yc = yc + ystep
+            liner.append(thresh[int(yc)][int(xc)])
+
+        paper_width = 69
+
+        xstep = abs(xer / paper_width)
+        ystep = - yer / paper_width
+        
+        xc = p[0][0]
+        yc = p[0][1]
+
+        new_notes = []
+
+        for bb in range(30):
+            ccy = int(yc + (5 * ystep) + (bb * ystep * 2))
+            ccx = int(xc + (5 * xstep) + (bb * xstep * 2))
+            
+            new_notes.append(thresh[ccy][ccx])
+            if thresh[ccy][ccx] == 255:
+                thickness = -1
+            else:
+                thickness = 1
+            cv2.circle(frame, (ccx, ccy), int(xstep), (0, 0, 255), thickness=thickness,)
+
+        for pair in zip(last_notes, new_notes):
+            if pair == (0, 255):
+                print("trigger a ", note_data[bb])
+
+    else:
+        p = (top_l, top_r)
+
+    cv2.line(frame, p[0], p[1], (0, 0, 255), thickness=1)
+
+    # for pix in range(int(hyp)):
+
 
     for coord in coords:
         # Display the resulting frame
         cv2.circle(frame, coord, 10, (255, 255, 0), thickness=1)
 
-    cv2.imshow('thresh',thresh)
     cv2.imshow('frame',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         raise ROOB
 
+    return new_notes
+
+last_notes = []
 while(True):
     try:
-        do_thang()
+        last_notes = do_thang(last_notes)
     except ROOB:
         break
     except Exception as e:
