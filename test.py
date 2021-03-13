@@ -10,6 +10,7 @@ for lport in mido.get_output_names():
 
 note_data = [60, 62, 67, 69, 71, 72, 74, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 98, 100]
 note_data = note_data[::-1]
+note_data = [note - 12 for note in note_data]
 cap = cv2.VideoCapture(2)
 
 class ROOB(Exception):
@@ -29,10 +30,10 @@ def do_thang(last_notes):
 
     top_finished_streaks = []
     streak = []
-    for a in range(len(thresh[0])):
-        if thresh[0][a] == 0:
+    for a in range(len(thresh[10])):
+        if thresh[10][a] == 0:
             streak.append(a)
-        if thresh[0][a] == 255 and len(streak) > 0:
+        if thresh[10][a] == 255 and len(streak) > 0:
             if len(streak) < 5:
                 streak = []
             else:
@@ -52,14 +53,14 @@ def do_thang(last_notes):
                 streak = []
     print(len(top_finished_streaks), len(bottom_finished_streaks))
 
-    print(top_finished_streaks[0][0], 0, top_finished_streaks[-1][-1], 0, bottom_finished_streaks[0][0], 478, bottom_finished_streaks[-1][-1], 478)
-    top_l = (top_finished_streaks[0][0], 0)
-    top_r = (top_finished_streaks[-1][-1], 0)
+    print(top_finished_streaks[0][0], 10, top_finished_streaks[-1][-1], 10, bottom_finished_streaks[0][0], 478, bottom_finished_streaks[-1][-1], 478)
+    top_l = (top_finished_streaks[0][0], 10)
+    top_r = (top_finished_streaks[-1][-1], 10)
     bot_l = (bottom_finished_streaks[0][0], 478)
     bot_r = (bottom_finished_streaks[-1][-1], 478)
     coords = [top_l, top_r, bot_l, bot_r]
 
-    top_m = (((top_r[0] - top_l[0]) / 2) + top_l[0], 0)
+    top_m = (((top_r[0] - top_l[0]) / 2) + top_l[0], 10)
     bot_m = (((bot_r[0] - bot_l[0]) / 2) + bot_l[0], 478)
 
     top_m_i = (int(top_m[0]), int(top_m[1]))
@@ -86,12 +87,12 @@ def do_thang(last_notes):
         print("nadj", xer, yer, side_ang)
         print("nhyp", hyp, top_mid_dis_a)
 
-        if top_l[0] < bot_l[0]:
+        if ang > 0:
             top_mod = (int(top_r[0] - xer), int(top_r[1] + yer))
 
             p = (top_mod, top_r)
 
-        elif top_l[0] > bot_l[0]:
+        elif ang < 0:
             top_mod = (int(top_l[0] + xer), int(top_l[1] - yer))
 
             p = (top_l, top_mod)
@@ -120,8 +121,8 @@ def do_thang(last_notes):
         new_notes = []
 
         for bb in range(30):
-            ccy = int(yc + (6 * ystep) + (bb * ystep * 2))
-            ccx = int(xc + (6 * xstep) + (bb * xstep * 2))
+            ccy = int(yc + (6.3 * ystep) + (bb * ystep * 2))
+            ccx = int(xc + (6.3 * xstep) + (bb * xstep * 2))
             
             new_notes.append(thresh[ccy][ccx])
             if thresh[ccy][ccx] == 255:
