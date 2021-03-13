@@ -1,9 +1,15 @@
 import numpy as np
 import cv2
 import math
+import mido
+import sys
+
+for lport in mido.get_output_names():
+    if "FLUID" in lport:
+        port = mido.open_output(lport)
 
 note_data = [60, 62, 67, 69, 71, 72, 74, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 98, 100]
-
+note_data = note_data[::-1]
 cap = cv2.VideoCapture(2)
 
 class ROOB(Exception):
@@ -103,7 +109,7 @@ def do_thang(last_notes):
             yc = yc + ystep
             liner.append(thresh[int(yc)][int(xc)])
 
-        paper_width = 69
+        paper_width = 70
 
         xstep = abs(xer / paper_width)
         ystep = - yer / paper_width
@@ -114,8 +120,8 @@ def do_thang(last_notes):
         new_notes = []
 
         for bb in range(30):
-            ccy = int(yc + (5 * ystep) + (bb * ystep * 2))
-            ccx = int(xc + (5 * xstep) + (bb * xstep * 2))
+            ccy = int(yc + (6 * ystep) + (bb * ystep * 2))
+            ccx = int(xc + (6 * xstep) + (bb * xstep * 2))
             
             new_notes.append(thresh[ccy][ccx])
             if thresh[ccy][ccx] == 255:
@@ -124,9 +130,16 @@ def do_thang(last_notes):
                 thickness = 1
             cv2.circle(frame, (ccx, ccy), int(xstep), (0, 0, 255), thickness=thickness,)
 
-        for pair in zip(last_notes, new_notes):
+        for i, pair in enumerate(zip(last_notes, new_notes)):
+            msg = False
             if pair == (0, 255):
-                print("trigger a ", note_data[bb])
+                print("trigger a ", note_data[i])
+                msg = mido.Message('note_on', note=note_data[i])
+            elif pair == (255, 0):
+                print("trigger a ", note_data[i])
+                msg = mido.Message('note_off', note=note_data[i])
+            if msg:            
+                port.send(msg)
 
     else:
         p = (top_l, top_r)
@@ -140,6 +153,7 @@ def do_thang(last_notes):
         # Display the resulting frame
         cv2.circle(frame, coord, 10, (255, 255, 0), thickness=1)
 
+    cv2.imshow('thresh',thresh)
     cv2.imshow('frame',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         raise ROOB
