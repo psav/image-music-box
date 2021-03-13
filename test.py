@@ -50,51 +50,46 @@ def do_thang():
     bot_l = (bottom_finished_streaks[0][0], 478)
     bot_r = (bottom_finished_streaks[-1][-1], 478)
     coords = [top_l, top_r, bot_l, bot_r]
-    ls_ang = math.tan((top_l[0] - bot_l[0]) / 478)
-    rs_ang = math.tan((top_r[0] - bot_r[0]) / 478)
-    av_ang = (ls_ang + rs_ang) / 2
 
-    print("angles", ls_ang, rs_ang)
+    top_m = (((top_r[0] - top_l[0]) / 2) + top_l[0], 0)
+    bot_m = (((bot_r[0] - bot_l[0]) / 2) + bot_l[0], 478)
 
-    # if top_l[0] < bot_l[0]:
-    #     av_ang = -av_ang
+    top_m_i = (int(top_m[0]), int(top_m[1]))
+    bot_m_i = (int(bot_m[0]), int(bot_m[1]))
+
+    print("midpt", top_m, bot_m, (bot_m[0] - top_m[0]))
+
+    cv2.line(frame, top_m_i, bot_m_i, (0, 0, 255), thickness=1)
+
+    ang = math.atan(478 / (bot_m[0] - top_m[0]))
+
+    print("nang", math.degrees(ang))
+
+    top_mid_dis_a = (top_r[0] - top_l[0]) / 2
+
+    hyp = top_mid_dis_a * math.sin(ang) * 2
+
+    side_ang = math.pi / 2 - ang
+
+    xer = hyp * math.cos(side_ang)
+    yer = hyp * math.sin(side_ang)
+    print("nadj", xer, yer, side_ang)
+    print("nhyp", hyp, top_mid_dis_a)
 
     if top_l[0] < bot_l[0]:
+        top_mod = (int(top_r[0] - xer), int(top_r[1] + yer))
 
-        av_ang = -av_ang
+        cv2.line(frame, top_r, top_mod, (0, 0, 255), thickness=1)
 
-        a = top_r[0] - top_r[1]
-        y1 = a * math.sin(av_ang)
-        x1 = a * math.sin(av_ang) * math.tan(av_ang)
-        print(x1, y1)
+    if top_l[0] > bot_l[0]:
+        top_mod = (int(top_l[0] + xer), int(top_l[1] - yer))
 
-        cv2.line(frame, (int(top_l[0] + x1), int(top_l[1] + y1)), top_r, (255, 255, 0), thickness=1)
-
-        x1r = (int(top_l[0] + x1), int(top_l[1] + y1))
-        x2r = top_r
-        d = a * math.cos(av_ang)
-        print(av_ang)
-
-    else:
-        #av_ang = -av_ang
-
-        a = top_l[0] - top_l[1]
-        y1 = a * math.sin(av_ang)
-        x1 = a * math.sin(av_ang) * math.tan(av_ang)
-        print(x1, y1)
-
-        cv2.line(frame, (int(top_r[0] + x1), int(top_r[1] + y1)), top_l, (255, 255, 0), thickness=1)
-
-        x1r = top_l
-        x2r = (int(top_r[0] + x1), int(top_r[1] + y1))
-        d = a * math.cos(av_ang)
-        print(av_ang)
+        cv2.line(frame, top_l, top_mod, (0, 0, 255), thickness=1)
 
     for coord in coords:
         # Display the resulting frame
         cv2.circle(frame, coord, 10, (255, 255, 0), thickness=1)
 
-    print(d)
     cv2.imshow('thresh',thresh)
     cv2.imshow('frame',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
