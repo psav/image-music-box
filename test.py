@@ -11,6 +11,7 @@ for lport in mido.get_output_names():
 note_data = [60, 62, 67, 69, 71, 72, 74, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 98, 100]
 note_data = note_data[::-1]
 note_data = [note - 12 for note in note_data]
+notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
 cap = cv2.VideoCapture(2)
 
@@ -132,6 +133,7 @@ def do_thang(last_notes):
                 thickness = 1
             cv2.circle(frame, (ccx, ccy), int(xstep), (0, 0, 255), thickness=thickness,)
 
+        note_string = " "
         for i, pair in enumerate(zip(last_notes, new_notes)):
             msg = False
             if pair == (0, 255):
@@ -142,6 +144,12 @@ def do_thang(last_notes):
                 msg = mido.Message('note_off', note=note_data[i])
             if msg:            
                 port.send(msg)
+
+            if pair[1] == 255:
+                note_string += notes[(60 - note_data[i]) % 12] + ", "
+
+        cv2.addText(frame, note_string, (30, 400), "Times", 12, (0, 0, 255))
+
 
     else:
         p = (top_l, top_r)
